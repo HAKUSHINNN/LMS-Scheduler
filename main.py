@@ -1,6 +1,3 @@
-以下のコードは、シングルクォーテーションをダブルクォーテーションに変更したものです：
-
-```python
 import requests
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
@@ -173,6 +170,4 @@ if login_response.url == hp_url:
             print(f"Event created: {event_summary}")
 
     print("課題提出日をGoogleカレンダーに追加または更新しました。")
-```
-
-このコードでは、すべてのシングルクォーテーションをダブルクォーテーションに変更しています。その他のロジックは元のままですので、動作は同様です。
+    
