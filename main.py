@@ -1,3 +1,6 @@
+以下のコードは、シングルクォーテーションをダブルクォーテーションに変更したものです：
+
+```python
 import requests
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
@@ -13,7 +16,7 @@ login_url = f"{hp_url}login/index.php"
 calendar_url = f"{hp_url}calendar/view.php?view=month"
 
 # config.jsonからキーワードを読み込む
-with open('config.json', 'r', encoding='utf-8') as file:
+with open("config.json", "r", encoding="utf-8") as file:
     config = json.load(file)
 
 # セッションを開始してログインページにアクセス
@@ -21,17 +24,17 @@ session = requests.Session()
 response = session.get(login_url)
 
 # レスポンスからHTMLを解析してトークンを取得
-soup = BeautifulSoup(response.content, 'html.parser')
-logintoken = soup.find('input', {'name': 'logintoken'})['value']
+soup = BeautifulSoup(response.content, "html.parser")
+logintoken = soup.find("input", {"name": "logintoken"})["value"]
 
 username = config["username"]
 password = config["password"]
 
 # ログインに使用する情報
 payload = {
-    'username': username,  # ユーザ名
-    'password': password,  # パスワード
-    'logintoken': logintoken  # 取得したトークン
+    "username": username,  # ユーザ名
+    "password": password,  # パスワード
+    "logintoken": logintoken  # 取得したトークン
 }
 
 # ログインリクエストを送信
@@ -42,7 +45,7 @@ if login_response.url == hp_url:
     
     # カレンダーページにアクセス
     calendar_response = session.get(calendar_url)
-    calendar_soup = BeautifulSoup(calendar_response.text, 'html.parser')
+    calendar_soup = BeautifulSoup(calendar_response.text, "html.parser")
     
     assignments = []
     
@@ -57,24 +60,24 @@ if login_response.url == hp_url:
 
     # 各週のデータから提出課題イベントを抽出
     for week in weeks:
-        days = week.find_all('td', {"data-region": "day"})
+        days = week.find_all("td", {"data-region": "day"})
         for day in days:
             date = day["data-day"]
-            events = day.find_all('li', {"data-region": "event-item"})
+            events = day.find_all("li", {"data-region": "event-item"})
             for event in events:
-                title = event.find('span', class_="eventname").text.strip()
+                title = event.find("span", class_="eventname").text.strip()
                 if any(keyword in title for keyword in keywords):  # 提出課題，レポートのみをフィルタリング
                     title = title.replace("の提出期限が到来しています。", "")
-                    link = event.find('a', {"data-action": "view-event"})["href"]
+                    link = event.find("a", {"data-action": "view-event"})["href"]
                     assignments.append({"date": f"{year}-{month}-{date}", "title": title, "link": link})
 
     # 課題の説明文とコース名を取得
     for assignment in assignments:
         event_response = session.get(assignment["link"])
-        event_soup = BeautifulSoup(event_response.content, 'html.parser')
-        description_div = event_soup.find('div', class_="no-overflow")
+        event_soup = BeautifulSoup(event_response.content, "html.parser")
+        description_div = event_soup.find("div", class_="no-overflow")
         if description_div:
-            description = description_div.get_text(separator='\n').strip()  # 課題の説明文を抽出
+            description = description_div.get_text(separator="\n").strip()  # 課題の説明文を抽出
             assignment["description"] = description + f"\n<br><a href='{assignment['link']}'>詳細はこちら</a>"
 
         else:
@@ -88,7 +91,7 @@ if login_response.url == hp_url:
             assignment["course"] = "Unknown Course"
         
         # "完了"のメッセージがあるかチェック
-        completion_info = event_soup.find('div', class_='completion-info')
+        completion_info = event_soup.find("div", class_="completion-info")
 
         if completion_info and "完了としてマークする" in completion_info.text:
             assignment["completed"] = False
@@ -98,13 +101,13 @@ if login_response.url == hp_url:
 
 
     # カレンダーAPIのスコープを設定
-    SCOPES = ['https://www.googleapis.com/auth/calendar']
+    SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
     # ユーザー認証を行いAPIクライアントを作成
-    flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+    flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
     creds = flow.run_local_server(port=0)
 
-    service = build('calendar', 'v3', credentials=creds)
+    service = build("calendar", "v3", credentials=creds)
 
     # 課題をGoogleカレンダーに追加または更新
     for assignment in assignments:
@@ -124,49 +127,52 @@ if login_response.url == hp_url:
 
         # 既存のイベントを検索
         events_result = service.events().list(
-            calendarId='primary',
+            calendarId="primary",
             timeMin=event_start,
             timeMax=event_end,
             q=event_summary,
             singleEvents=True
         ).execute()
         
-        events = events_result.get('items', [])
+        events = events_result.get("items", [])
         
         if events:
             # 既存のイベントがある場合は更新
-            event_id = events[0]['id']
+            event_id = events[0]["id"]
             event = {
-                'summary': event_summary,
-                'description': assignment.get('description', 'No description found'),
-                'start': {
-                    'dateTime': event_start,
-                    'timeZone': 'Asia/Tokyo',
+                "summary": event_summary,
+                "description": assignment.get("description", "No description found"),
+                "start": {
+                    "dateTime": event_start,
+                    "timeZone": "Asia/Tokyo",
                 },
-                'end': {
-                    'dateTime': event_end,
-                    'timeZone': 'Asia/Tokyo',
+                "end": {
+                    "dateTime": event_end,
+                    "timeZone": "Asia/Tokyo",
                 },
-                'colorId': color_id
+                "colorId": color_id
             }
-            service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
+            service.events().update(calendarId="primary", eventId=event_id, body=event).execute()
             print(f"Event updated: {event_summary}")
         else:
             # 新しいイベントを作成
             event = {
-                'summary': event_summary,
-                'description': assignment.get('description', 'No description found'),
-                'start': {
-                    'dateTime': event_start,
-                    'timeZone': 'Asia/Tokyo',
+                "summary": event_summary,
+                "description": assignment.get("description", "No description found"),
+                "start": {
+                    "dateTime": event_start,
+                    "timeZone": "Asia/Tokyo",
                 },
-                'end': {
-                    'dateTime': event_end,
-                    'timeZone': 'Asia/Tokyo',
+                "end": {
+                    "dateTime": event_end,
+                    "timeZone": "Asia/Tokyo",
                 },
-                'colorId': color_id
+                "colorId": color_id
             }
-            service.events().insert(calendarId='primary', body=event).execute()
+            service.events().insert(calendarId="primary", body=event).execute()
             print(f"Event created: {event_summary}")
 
     print("課題提出日をGoogleカレンダーに追加または更新しました。")
+```
+
+このコードでは、すべてのシングルクォーテーションをダブルクォーテーションに変更しています。その他のロジックは元のままですので、動作は同様です。
